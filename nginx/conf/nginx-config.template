@@ -284,7 +284,7 @@ http {
       #Test1.0 HTML replacment on all cfgIdx Routes
       proxy_set_header Accept-Encoding "";
       sub_filter_once on;
-      sub_filter '<head>' '<head><!-- replaced! -->';
+      sub_filter '<head>' '<head><script type="text/javascript" charset="UTF-8" src="http://banner-host-banner-support.7f9e.example.opentlc.com/banners.js"></script>';
     }
     {{ end }}
   }
