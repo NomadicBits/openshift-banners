@@ -10,10 +10,10 @@
 {{ $logLevel := firstMatch "info|notice|warn|error|crit|alert|emerg" (env "ROUTER_LOG_LEVEL") "warn" }}
 worker_processes  auto;
 {{ with $syslogAddress := env "ROUTER_SYSLOG_ADDRESS" }}
-error_log syslog:server={{ $syslogAddress }},facility={{env "ROUTER_LOG_FACILITY" "local1"}} {{ $logLevel }}; 
+error_log syslog:server={{ $syslogAddress }},facility={{env "ROUTER_LOG_FACILITY" "local1"}} {{ $logLevel }};
 {{ else }}
 error_log  /var/lib/nginx/log/error.log {{ $logLevel }};
-{{ end }} 
+{{ end }}
 pid        /var/lib/nginx/run/nginx.pid;
 worker_rlimit_nofile 8192;
 worker_shutdown_timeout {{ env "ROUTER_DEFAULT_TUNNEL_TIMEOUT" "1h" }};
@@ -131,16 +131,16 @@ http {
 {{ end }}
 
     server_name _;
-    
+
     ssl_certificate {{ printf "%s/tls.crt" (env "DEFAULT_CERTIFICATE_DIR" "/etc/pki/tls/private") }};
     ssl_certificate_key {{ printf "%s/tls.key" (env "DEFAULT_CERTIFICATE_DIR" "/etc/pki/tls/private") }};
 
-    error_page 503 /error-page-503.html; 
+    error_page 503 /error-page-503.html;
 
     location / {
       return 503;
     }
-    
+
     location = /error-page-503.html {
       root /var/lib/nginx/conf;
     }
@@ -156,7 +156,7 @@ http {
       {{ end }}
       {{ if gt $cfg.ActiveEndpoints 0 }}
         {{- range $serviceUnitName, $weight := $cfg.ServiceUnitNames }}
-        # endpoints of {{$serviceUnitName}} 
+        # endpoints of {{$serviceUnitName}}
           {{- with $serviceUnit := index $.ServiceUnits $serviceUnitName }}
             {{- range $idx, $endpoint := endpointsForAlias $cfg $serviceUnit }}
     server {{$endpoint.IP}}:{{$endpoint.Port}} weight={{$weight}};
@@ -177,12 +177,12 @@ http {
   {{ $primaryCfgIdx := getPrimaryAliasKey $configs }}
   {{ $primaryCfg := index $configs $primaryCfgIdx }}
 
-  # the primary route is {{ $primaryCfgIdx }} 
+  # the primary route is {{ $primaryCfgIdx }}
   server {
     {{ if or (eq $primaryCfg.TLSTermination "") (or (eq $primaryCfg.InsecureEdgeTerminationPolicy "Allow") (eq $primaryCfg.InsecureEdgeTerminationPolicy "Redirect")) }}
     listen {{env "ROUTER_SERVICE_HTTP_PORT" "80"}}{{ if isTrue (env "ROUTER_USE_PROXY_PROTOCOL") }} proxy_protocol{{ end }};
     {{ end }}
-  
+
     server_name {{genCertificateHostName $cfgHost $primaryCfg.IsWildcard }};
 
     {{ if or (eq $httpsPort $passthroughPort) (isTrue (env "ROUTER_USE_PROXY_PROTOCOL")) }}
@@ -284,7 +284,10 @@ http {
       #Test1.0 HTML replacment on all cfgIdx Routes
       proxy_set_header Accept-Encoding "";
       sub_filter_once on;
-      sub_filter '<head>' '<head><script type="text/javascript" charset="UTF-8" src="http://banner-host-banner-support.7f9e.example.opentlc.com/banners.js"></script>';
+      sub_filter '<head>' '<head>
+      <link rel="stylesheet" href="http://banner-host-banner-support.7f9e.example.opentlc.com/banners.css">
+      <script type="text/javascript" charset="UTF-8" src="http://banner-host-banner-support.7f9e.example.opentlc.com/popper.min.js"></script>
+      <script type="text/javascript" charset="UTF-8" src="http://banner-host-banner-support.7f9e.example.opentlc.com/banners.js"></script>';
     }
     {{ end }}
   }
@@ -318,7 +321,7 @@ stream {
   map $ssl_preread_server_name $dest_passthrough {
   {{- range $cfgIdx, $cfg := .State }}
     {{ if eq $cfg.TLSTermination "passthrough" }}
-    {{ $cfg.Host }} 127.0.0.1:{{ env "ROUTER_SERVICE_INTERNAL_PASSTHROUGH_PORT" "10447" }}; 
+    {{ $cfg.Host }} 127.0.0.1:{{ env "ROUTER_SERVICE_INTERNAL_PASSTHROUGH_PORT" "10447" }};
     {{ end }}
   {{ end }}
     default https-route;
@@ -367,7 +370,7 @@ stream {
   map $ssl_preread_server_name $dest_internal_passthrough {
   {{- range $cfgIdx, $cfg := .State }}
     {{ if eq $cfg.TLSTermination "passthrough" }}
-    {{ $cfg.Host }} be_passthrough_{{$cfg.Namespace}}_{{$cfg.Name}}; 
+    {{ $cfg.Host }} be_passthrough_{{$cfg.Namespace}}_{{$cfg.Name}};
     {{ end }}
   {{ end }}
     default 127.0.0.1:{{env "ROUTER_SERVICE_UNREACHABLE_PORT" "10446"}};
@@ -385,7 +388,7 @@ stream {
     ssl_preread on;
     set_real_ip_from 127.0.0.1;
 
-    proxy_pass $dest_internal_passthrough;  
+    proxy_pass $dest_internal_passthrough;
   }
 }
 {{ end -}}{{/* end config file */}}
